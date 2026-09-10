@@ -1,0 +1,152 @@
+@import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
+
+:root {
+  --ink: #17211d;
+  --muted: #62706b;
+  --paper: #f7f5ee;
+  --line: #d6ddd8;
+  --accent: #0f766e;
+  --accent-strong: #115e59;
+  --signal: #c2410c;
+  --soft-green: #e2f0eb;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Trebuchet MS", Verdana, Arial, sans-serif;
+  font-size: 0.92rem;
+}
+
+textarea,
+input,
+select,
+button {
+  font: inherit;
+}
+
+.cipher-shell {
+  min-height: 100vh;
+  background: #f7f5ee;
+}
+
+.section-kicker {
+  color: var(--signal);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.work-area,
+.alphabet-area {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.alphabet-area {
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.panel-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.alphabet-input {
+  min-height: 4.8rem;
+  resize: vertical;
+  word-break: break-all;
+}
+
+.message-input {
+  min-height: 6.2rem;
+  resize: vertical;
+}
+
+.form-label,
+.form-text,
+.form-control,
+.form-select,
+.btn,
+.badge {
+  font-size: 0.86rem;
+}
+
+.form-control,
+.form-select {
+  border-color: #c8d2cd;
+  border-radius: 6px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.16);
+}
+
+.btn {
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.btn-accent {
+  --bs-btn-bg: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: var(--accent-strong);
+  --bs-btn-hover-border-color: var(--accent-strong);
+  --bs-btn-hover-color: #fff;
+}
+
+.result-box {
+  min-height: 5.8rem;
+  border-left: 4px solid var(--line);
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0.7rem 0.85rem;
+}
+
+.result-box.success {
+  border-left-color: var(--accent);
+  background: var(--soft-green);
+}
+
+.result-box span {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.result-box output {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.missing-characters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid var(--signal);
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.missing-characters code {
+  color: var(--signal);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 991.98px) {
+  .work-area .col-12 + .col-12 {
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--line);
+  }
+}
