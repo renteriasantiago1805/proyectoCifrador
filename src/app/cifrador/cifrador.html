@@ -1,0 +1,122 @@
+<main class="cipher-shell">
+  <div class="container py-3">
+    <section class="work-area" aria-label="Herramientas de cifrado y descifrado">
+      <div class="row g-4">
+        <div class="col-12 col-lg-6">
+          <section aria-labelledby="encryptTitle">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <span class="section-kicker">Cifrado</span>
+                <h2 id="encryptTitle" class="panel-title">Generar mensaje cifrado</h2>
+              </div>
+              <span class="badge text-bg-light">Rango {{ minShift() }} a {{ maxShift() }}</span>
+            </div>
+
+            <label class="form-label" for="plainText">Oracion original</label>
+            <textarea id="plainText" class="form-control message-input" [(ngModel)]="plainText"></textarea>
+
+            <div class="row g-3 mt-1 align-items-end">
+              <div class="col-12 col-sm-7">
+                <label class="form-label" for="cipherKind">Metodo</label>
+                <select id="cipherKind" class="form-select" [(ngModel)]="cipherKind">
+                  <option value="caesar">Cesar</option>
+                  <option value="atbash">Atbash</option>
+                </select>
+              </div>
+              <div class="col-12 col-sm-5">
+                <label class="form-label" for="shift">Modulo Cesar</label>
+                <input
+                  id="shift"
+                  class="form-control"
+                  type="number"
+                  [min]="minShift()"
+                  [max]="maxShift()"
+                  [(ngModel)]="shift"
+                  (ngModelChange)="clampShift()"
+                  [disabled]="cipherKind === 'atbash'"
+                />
+              </div>
+            </div>
+
+            <button class="btn btn-dark w-100 mt-3" type="button" (click)="encrypt()">Cifrar</button>
+
+            <div class="result-box mt-3" aria-live="polite">
+              <span>Resultado cifrado</span>
+              <output>{{ encryptionResult() || 'Aun no se ha cifrado ningun mensaje.' }}</output>
+            </div>
+          </section>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <section aria-labelledby="decryptTitle">
+            <div class="mb-3">
+              <span class="section-kicker">Descifrado automatico</span>
+              <h2 id="decryptTitle" class="panel-title">Detectar Cesar o Atbash</h2>
+            </div>
+
+            <label class="form-label" for="cipherText">Mensaje cifrado</label>
+            <textarea id="cipherText" class="form-control message-input" [(ngModel)]="cipherText"></textarea>
+
+            <button class="btn btn-accent w-100 mt-3" type="button" (click)="decryptAutomatically()">
+              Descifrar automaticamente
+            </button>
+
+            @if (decryptionResult(); as result) {
+              <div class="result-box success mt-3" aria-live="polite">
+                <span>Linea descifrada correcta</span>
+                <output>{{ result.plainText }}</output>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="badge rounded-pill text-bg-success">{{ detectedLabel(result) }}</span>
+                </div>
+              </div>
+            } @else {
+              <div class="result-box mt-3">
+                <span>Linea descifrada correcta</span>
+                <output>Esperando mensaje cifrado.</output>
+              </div>
+            }
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="alphabet-area" aria-labelledby="alphabetTitle">
+      <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-md-center mb-3">
+        <div>
+          <span class="section-kicker">Conjunto de caracteres</span>
+          <h2 id="alphabetTitle" class="panel-title mb-0">Alfabeto de trabajo</h2>
+        </div>
+        <div class="btn-group" role="group" aria-label="Cargar alfabeto">
+          <button class="btn btn-outline-dark" type="button" (click)="useAsciiPreset()">ASCII</button>
+          <button class="btn btn-outline-dark" type="button" (click)="useSpanishPreset()">ASCII + ES</button>
+        </div>
+      </div>
+
+      <label class="form-label" for="characters">Caracteres usados en el cifrado</label>
+      <textarea
+        id="characters"
+        class="form-control alphabet-input"
+        [(ngModel)]="characters"
+        (ngModelChange)="clampShift()"
+        spellcheck="false"
+        aria-describedby="charactersHelp"
+      ></textarea>
+      <div id="charactersHelp" class="form-text">
+        Caracteres unicos detectados: {{ cleanCharacters().length }}. Los simbolos repetidos se ignoran para evitar
+        mapeos ambiguos.
+      </div>
+
+      @if (missingCharacters().length > 0) {
+        <div class="missing-characters mt-2">
+          <div>
+            <strong>Caracteres fuera del alfabeto:</strong>
+            <code>{{ missingCharacters().join(' ') }}</code>
+          </div>
+          <button class="btn btn-sm btn-outline-dark" type="button" (click)="addMissingCharacters()">
+            Agregar al alfabeto
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+</main>
