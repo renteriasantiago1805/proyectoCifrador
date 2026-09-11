@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cifrador Cesar y Atbash</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #62706b;
+      --paper: #f7f5ee;
+      --line: #d6ddd8;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --signal: #c2410c;
+      --soft-green: #e2f0eb;
+    }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Trebuchet MS", Verdana, Arial, sans-serif;
+      font-size: .92rem;
+    }
+    .shell { max-width: 1060px; margin: 0 auto; padding: 24px 16px 36px; }
+    .panel { border: 1px solid var(--line); background: rgba(255,255,255,.78); border-radius: 8px; padding: 18px; }
+    h1, h2 { font-weight: 800; letter-spacing: 0; }
+    h1 { font-size: 1.45rem; margin: 0 0 14px; }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; }
+    label { font-weight: 700; color: var(--ink); }
+    .form-control, .form-select { border-radius: 6px; border-color: var(--line); font-size: .9rem; }
+    textarea { min-height: 118px; resize: vertical; }
+    .btn-main { background: var(--accent); border-color: var(--accent); color: white; font-weight: 700; }
+    .btn-main:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: white; }
+    .btn-outline-secondary { font-weight: 700; }
+    .result { min-height: 96px; white-space: pre-wrap; word-break: break-word; background: #ffffff; border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+    .small-note { color: var(--muted); font-size: .82rem; }
+    .badge-method { background: var(--soft-green); color: var(--accent-strong); border: 1px solid #bddbd3; }
+    .warning { border-left: 4px solid var(--signal); background: #fff7ed; padding: 10px 12px; border-radius: 6px; }
+    .character-box { font-family: Consolas, monospace; min-height: 88px; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="row g-3 align-items-start">
+      <section class="col-lg-6">
+        <div class="panel h-100">
+          <h1>Cifrado</h1>
+          <div class="mb-3">
+            <label for="plainText" class="form-label">Mensaje</label>
+            <textarea id="plainText" class="form-control">La seguridad inicia cuando entendemos como se rompe un cifrado simple.</textarea>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-7">
+              <label for="cipherKind" class="form-label">Metodo</label>
+              <select id="cipherKind" class="form-select">
+                <option value="caesar">Cesar</option>
+                <option value="atbash">Atbash</option>
+              </select>
+            </div>
+            <div class="col-sm-5">
+              <label for="shift" class="form-label">Modulo</label>
+              <input id="shift" class="form-control" type="number" value="3">
+            </div>
+          </div>
+          <button id="encryptBtn" class="btn btn-main w-100 mb-3">Cifrar</button>
+          <label class="form-label">Resultado</label>
+          <div id="encryptedResult" class="result"></div>
+        </div>
+      </section>
+
+      <section class="col-lg-6">
+        <div class="panel h-100">
+          <h1>Descifrado automatico</h1>
+          <div class="mb-3">
+            <label for="cipherText" class="form-label">Mensaje cifrado</label>
+            <textarea id="cipherText" class="form-control"></textarea>
+          </div>
+          <button id="decryptBtn" class="btn btn-main w-100 mb-3">Descifrar automaticamente</button>
+          <div id="detectedMeta" class="mb-2"></div>
+          <label class="form-label">Linea descifrada</label>
+          <div id="decryptedResult" class="result"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel mt-3">
+      <h2>Conjunto de caracteres</h2>
+      <p class="small-note mb-2">Los caracteres que no esten aqui se conservan igual. Si quieres cifrarlos, agregalos al conjunto.</p>
+      <textarea id="characters" class="form-control character-box mb-2"></textarea>
+      <div class="d-flex flex-wrap gap-2">
+        <button id="asciiBtn" class="btn btn-outline-secondary btn-sm">ASCII</button>
+        <button id="spanishBtn" class="btn btn-outline-secondary btn-sm">ASCII + espanol</button>
+        <button id="addMissingBtn" class="btn btn-outline-secondary btn-sm">Agregar faltantes</button>
+      </div>
+      <div id="missingBox" class="warning mt-3 d-none"></div>
+    </section>
+  </main>
+
+  <script>
+    const defaultCharacters = Array.from({ length: 95 }, (_, index) => String.fromCharCode(index + 32)).join('');
+    const spanishCharacters = defaultCharacters + 'aeiouAEIOUnN'.replace('a','á').replace('e','é').replace('i','í').replace('o','ó').replace('u','ú').replace('A','Á').replace('E','É').replace('I','Í').replace('O','Ó').replace('U','Ú').replace('n','ñ').replace('N','Ñ') + '¡¿';
+
+    const ids = ['plainText','cipherKind','shift','cipherText','characters','encryptedResult','decryptedResult','detectedMeta','missingBox'];
+    const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+    el.characters.value = defaultCharacters;
+
+    function normalizeCharacters(characters) { return Array.from(new Set(Array.from(characters))); }
+    function mod(value, modulo) { return ((value % modulo) + modulo) % modulo; }
+    function safeShift(shift, length) { return mod(Math.trunc(Number.isFinite(shift) ? shift : 0), length); }
+    function transformByIndex(text, alphabet, shift) {
+      return Array.from(text).map((character) => {
+        const index = alphabet.indexOf(character);
+        return index === -1 ? character : alphabet[mod(index + shift, alphabet.length)];
+      }).join('');
+    }
+    function encryptCaesar(text, characters, shift) {
+      const alphabet = normalizeCharacters(characters);
+      return alphabet.length < 2 ? text : transformByIndex(text, alphabet, safeShift(shift, alphabet.length));
+    }
+    function decryptCaesar(text, characters, shift) {
+      const alphabet = normalizeCharacters(characters);
+      return alphabet.length < 2 ? text : transformByIndex(text, alphabet, -safeShift(shift, alphabet.length));
+    }
+    function atbash(text, characters) {
+      const alphabet = normalizeCharacters(characters);
+      if (alphabet.length < 2) return text;
+      return Array.from(text).map((character) => {
+        const index = alphabet.indexOf(character);
+        return index === -1 ? character : alphabet[alphabet.length - 1 - index];
+      }).join('');
+    }
+    function normalizeSpanish(text) {
+      return text.toLocaleLowerCase('es-MX').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function scoreCommonWords(words) {
+      const common = new Set(['a','al','como','con','de','del','el','en','es','esta','este','hay','la','las','lo','los','mas','mensaje','mi','no','para','por','que','se','si','sin','su','texto','un','una','y']);
+      return words.reduce((total, word) => {
+        if (common.has(word)) return total + (word.length <= 2 ? 8 : 15);
+        if (word.length === 1 && !['a','e','o','y'].includes(word)) return total - 8;
+        return total;
+      }, 0);
+    }
+    function scoreCommonPhrases(normalized) {
+      const padded = ` ${normalized} `;
+      const weights = { ' de ': 10, ' el ': 10, ' en ': 9, ' la ': 10, ' que ': 14, ' se ': 8, ' un ': 8, ' una ': 10, ' y ': 8 };
+      return Object.entries(weights).reduce((total, [phrase, weight]) => total + (padded.split(phrase).length - 1) * weight, 0);
+    }
+    function frequencyPenalty(letters) {
+      const expected = { a:12.53,b:1.42,c:4.68,d:5.86,e:13.68,f:.69,g:1.01,h:.7,i:6.25,j:.44,k:.02,l:4.97,m:3.15,n:6.71,o:8.68,p:2.51,q:.88,r:6.87,s:7.98,t:4.63,u:3.93,v:.9,w:.01,x:.22,y:.9,z:.52 };
+      return Object.entries(expected).reduce((penalty, [letter, percent]) => {
+        const observed = letters.filter((value) => value === letter).length;
+        const wanted = (percent / 100) * letters.length;
+        return penalty + Math.pow(observed - wanted, 2) / Math.max(wanted, .01);
+      }, 0);
+    }
+    function scoreText(text, alphabet) {
+      const normalized = normalizeSpanish(text);
+      const letters = normalized.match(/[a-z]/g) || [];
+      const words = normalized.match(/[a-z]{1,24}/g) || [];
+      const transformedRatio = Array.from(text).filter((character) => alphabet.includes(character)).length / Math.max(Array.from(text).length, 1);
+      const vowelRatio = letters.filter((letter) => 'aeiou'.includes(letter)).length / Math.max(letters.length, 1);
+      const spaceRatio = (normalized.match(/\s/g) || []).length / Math.max(normalized.length, 1);
+      const averageWordLength = words.reduce((total, word) => total + word.length, 0) / Math.max(words.length, 1);
+      const longRuns = (normalized.match(/[bcdfghjklmnpqrstvwxyz]{5,}/g) || []).length;
+      const realSpaceRatio = (text.match(/\s/g) || []).length / Math.max(text.length, 1);
+      const artificialSeparators = (text.match(/[_^`|~{}[\]\\]/g) || []).length;
+      let score = transformedRatio * 15 + scoreCommonWords(words) + scoreCommonPhrases(normalized);
+      score += vowelRatio >= .32 && vowelRatio <= .58 ? 18 : -12;
+      if (spaceRatio > .08 && spaceRatio < .28) score += 10;
+      if (averageWordLength >= 2.5 && averageWordLength <= 9) score += 8;
+      if (realSpaceRatio > .08 && realSpaceRatio < .28) score += 24;
+      score -= longRuns * 12 + artificialSeparators * 5;
+      if (letters.length >= 8) score -= frequencyPenalty(letters) * .18;
+      return score;
+    }
+    function signedShift(shift, length) {
+      const normalized = safeShift(shift, length);
+      return normalized > Math.floor(length / 2) ? normalized - length : normalized;
+    }
+    function detect(cipherText, characters) {
+      const alphabet = normalizeCharacters(characters);
+      if (alphabet.length < 2 || cipherText.trim().length === 0) return { kind: 'caesar', shift: 0, plainText: cipherText, score: 0, confidence: 0 };
+      const source = alphabet.join('');
+      const candidates = [
+        { kind: 'atbash', shift: null, plainText: atbash(cipherText, source) },
+        ...Array.from({ length: alphabet.length }, (_, shift) => ({ kind: 'caesar', shift, plainText: decryptCaesar(cipherText, source, shift) }))
+      ].map((candidate) => ({ ...candidate, score: scoreText(candidate.plainText, alphabet) })).sort((a, b) => b.score - a.score);
+      const best = candidates[0];
+      const runner = candidates[1];
+      const difference = runner ? best.score - runner.score : best.score;
+      const confidence = best.score <= 0 ? 0 : Math.max(0, Math.min(99, Math.round(difference / Math.max(Math.abs(best.score), 1) * 100)));
+      return { ...best, shift: best.kind === 'caesar' ? signedShift(best.shift, alphabet.length) : null, confidence };
+    }
+    function missingCharacters() {
+      const alphabet = new Set(normalizeCharacters(el.characters.value));
+      return Array.from(new Set(Array.from(el.plainText.value + el.cipherText.value).filter((character) => !alphabet.has(character))));
+    }
+    function renderMissing() {
+      const missing = missingCharacters();
+      el.missingBox.classList.toggle('d-none', missing.length === 0);
+      el.missingBox.textContent = missing.length ? `Caracteres fuera del conjunto: ${missing.join(' ')}` : '';
+    }
+    document.getElementById('encryptBtn').addEventListener('click', () => {
+      const shift = Number(el.shift.value);
+      const result = el.cipherKind.value === 'caesar' ? encryptCaesar(el.plainText.value, el.characters.value, shift) : atbash(el.plainText.value, el.characters.value);
+      el.encryptedResult.textContent = result;
+      el.cipherText.value = result;
+      el.decryptedResult.textContent = '';
+      el.detectedMeta.textContent = '';
+      renderMissing();
+    });
+    document.getElementById('decryptBtn').addEventListener('click', () => {
+      const result = detect(el.cipherText.value, el.characters.value);
+      el.detectedMeta.innerHTML = `<span class="badge badge-method">${result.kind === 'caesar' ? 'Cesar, modulo ' + result.shift : 'Atbash'}</span>`;
+      el.decryptedResult.textContent = result.plainText;
+      renderMissing();
+    });
+    document.getElementById('asciiBtn').addEventListener('click', () => { el.characters.value = defaultCharacters; renderMissing(); });
+    document.getElementById('spanishBtn').addEventListener('click', () => { el.characters.value = spanishCharacters; renderMissing(); });
+    document.getElementById('addMissingBtn').addEventListener('click', () => { el.characters.value += missingCharacters().join(''); renderMissing(); });
+    ['input','change'].forEach((event) => ['plainText','cipherText','characters'].forEach((id) => el[id].addEventListener(event, renderMissing)));
+    renderMissing();
+  </script>
+</body>
+</html>
