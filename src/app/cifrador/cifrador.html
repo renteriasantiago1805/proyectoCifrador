@@ -68,6 +68,12 @@
                 <div class="d-flex flex-wrap gap-2 mt-3">
                   <span class="badge rounded-pill text-bg-success">{{ detectedLabel(result) }}</span>
                 </div>
+                @if (result.ignoredCharacters.length > 0) {
+                  <p class="ignored-note mt-2 mb-0">
+                    Eliminados antes de descifrar por no estar en el alfabeto:
+                    <code>{{ result.ignoredCharacters.join(' ') }}</code>
+                  </p>
+                }
               </div>
             } @else {
               <div class="result-box mt-3">
@@ -89,6 +95,7 @@
         <div class="btn-group" role="group" aria-label="Cargar alfabeto">
           <button class="btn btn-outline-dark" type="button" (click)="useAsciiPreset()">ASCII</button>
           <button class="btn btn-outline-dark" type="button" (click)="useSpanishPreset()">ASCII + ES</button>
+          <button class="btn btn-outline-dark" type="button" (click)="useRarePreset()">Raro</button>
         </div>
       </div>
 
@@ -109,7 +116,7 @@
       @if (missingCharacters().length > 0) {
         <div class="missing-characters mt-2">
           <div>
-            <strong>Caracteres fuera del alfabeto:</strong>
+            <strong>Caracteres de la oracion original fuera del alfabeto:</strong>
             <code>{{ missingCharacters().join(' ') }}</code>
           </div>
           <button class="btn btn-sm btn-outline-dark" type="button" (click)="addMissingCharacters()">

@@ -7,16 +7,22 @@ Proyecto: Programa web para cifrar y descifrar oraciones con Cesar y Atbash
 Tecnologias: Angular, TypeScript y Bootstrap  
 Entrega: enlace al programa publicado y enlace al codigo documentado
 
+## Enlaces de entrega
+
+Programa web publicado: https://renteriasantiago1805.github.io/proyectoCifrador/  
+Codigo fuente documentado: https://github.com/renteriasantiago1805/proyectoCifrador
+
 ## Indice
 
 1. Introduccion
 2. Objetivo
 3. Desarrollo
-4. Ejecucion local
-5. Publicacion sugerida
-6. Seguridad de la documentacion
-7. Conclusion
-8. Bibliografia
+4. Enlaces de entrega
+5. Ejecucion local
+6. Publicacion
+7. Seguridad de la documentacion
+8. Conclusion
+9. Bibliografia
 
 ## Introduccion
 
@@ -100,9 +106,21 @@ Ejecutar pruebas:
 npm test
 ```
 
-## Publicacion sugerida
+## Publicacion
 
-Una opcion sencilla es Firebase Hosting:
+La version publica del proyecto se encuentra en GitHub Pages:
+
+```text
+https://renteriasantiago1805.github.io/proyectoCifrador/
+```
+
+El codigo fuente se encuentra en GitHub:
+
+```text
+https://github.com/renteriasantiago1805/proyectoCifrador
+```
+
+Como alternativa, tambien podria publicarse en Firebase Hosting:
 
 ```bash
 npm install -g firebase-tools

@@ -15,6 +15,9 @@ export class Cifrador {
 
   readonly asciiPreset = this.crypto.defaultCharacters;
   readonly spanishPreset = `${this.asciiPreset}áéíóúÁÉÍÓÚñÑ¡¿`;
+  // Referencia 10
+  readonly rarePreset =
+    'Z𓁨𓁞𓀺(\\*=𓁕,𓁘𓀍𓁴F𓁇#𓁙𓁡𓁲𓁒B𓀭^𓁂ñE𓀳𓀸]|\\e𓁚𓀬𓁏𓁥𓁊𓁆U𓀞P𓀄𓀮¿𓁃¢ap?{±𓀐0𓁐𓀆𓀑4s𓀗8£𓁬𓀾𓁢L9𓀹𓁍Co𓀟𓀊n𓀅𓁠$R𓀵𓀇&!𓀥𓁮𓀋𓀶hIj𓀓Ñ𓀉x𓀀6𓁣\\`g7𓁳𓁓%𓁀𓀏𓁖}2/"𓀼<¬;®️A.\\@k:𓁋𓁯𓀠𓀘M𓀲u¥𓀧𓁟𓁔𓁜𓀙°𓀿§N𓀚)dWJ𓀪𓀁wb𓁌𓀕©️𓀡𓁑𓀷\\~y𓁭l+𓁛𓀂€𓁫𓁉vV𓀈O𓁧𓁦1𓀌-f𓀩D';
   readonly encryptionResult = signal('');
   readonly decryptionResult = signal<CipherCandidate | null>(null);
 
@@ -51,12 +54,16 @@ export class Cifrador {
     this.clampShift();
   }
 
+  useRarePreset(): void {
+    this.characters = this.rarePreset;
+    this.clampShift();
+  }
+
   missingCharacters(): string[] {
     const alphabet = new Set(this.cleanCharacters());
-    const usedText = `${this.plainText}${this.cipherText}`;
 
-    // [9] Detecta caracteres escritos por el usuario que aun no pertenecen al alfabeto de cifrado.
-    return Array.from(new Set(Array.from(usedText).filter((character) => !alphabet.has(character))));
+    // Referencia 9
+    return Array.from(new Set(Array.from(this.plainText).filter((character) => !alphabet.has(character))));
   }
 
   addMissingCharacters(): void {

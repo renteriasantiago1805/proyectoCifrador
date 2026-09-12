@@ -38,6 +38,8 @@
     .small-note { color: var(--muted); font-size: .82rem; }
     .badge-method { background: var(--soft-green); color: var(--accent-strong); border: 1px solid #bddbd3; }
     .warning { border-left: 4px solid var(--signal); background: #fff7ed; padding: 10px 12px; border-radius: 6px; }
+    .ignored-note { color: var(--muted); font-size: .82rem; }
+    .ignored-note code { white-space: pre-wrap; word-break: break-word; }
     .character-box { font-family: Consolas, monospace; min-height: 88px; }
   </style>
 </head>
@@ -81,6 +83,7 @@
           <div id="detectedMeta" class="mb-2"></div>
           <label class="form-label">Linea descifrada</label>
           <div id="decryptedResult" class="result"></div>
+          <p id="ignoredBox" class="ignored-note mt-2 mb-0"></p>
         </div>
       </section>
     </div>
@@ -92,6 +95,7 @@
       <div class="d-flex flex-wrap gap-2">
         <button id="asciiBtn" class="btn btn-outline-secondary btn-sm">ASCII</button>
         <button id="spanishBtn" class="btn btn-outline-secondary btn-sm">ASCII + espanol</button>
+        <button id="rareBtn" class="btn btn-outline-secondary btn-sm">Raro</button>
         <button id="addMissingBtn" class="btn btn-outline-secondary btn-sm">Agregar faltantes</button>
       </div>
       <div id="missingBox" class="warning mt-3 d-none"></div>
@@ -101,8 +105,9 @@
   <script>
     const defaultCharacters = Array.from({ length: 95 }, (_, index) => String.fromCharCode(index + 32)).join('');
     const spanishCharacters = defaultCharacters + 'aeiouAEIOUnN'.replace('a','á').replace('e','é').replace('i','í').replace('o','ó').replace('u','ú').replace('A','Á').replace('E','É').replace('I','Í').replace('O','Ó').replace('U','Ú').replace('n','ñ').replace('N','Ñ') + '¡¿';
+    const rareCharacters = 'Z𓁨𓁞𓀺(\\*=𓁕,𓁘𓀍𓁴F𓁇#𓁙𓁡𓁲𓁒B𓀭^𓁂ñE𓀳𓀸]|\\e𓁚𓀬𓁏𓁥𓁊𓁆U𓀞P𓀄𓀮¿𓁃¢ap?{±𓀐0𓁐𓀆𓀑4s𓀗8£𓁬𓀾𓁢L9𓀹𓁍Co𓀟𓀊n𓀅𓁠$R𓀵𓀇&!𓀥𓁮𓀋𓀶hIj𓀓Ñ𓀉x𓀀6𓁣\\`g7𓁳𓁓%𓁀𓀏𓁖}2/"𓀼<¬;®️A.\\@k:𓁋𓁯𓀠𓀘M𓀲u¥𓀧𓁟𓁔𓁜𓀙°𓀿§N𓀚)dWJ𓀪𓀁wb𓁌𓀕©️𓀡𓁑𓀷\\~y𓁭l+𓁛𓀂€𓁫𓁉vV𓀈O𓁧𓁦1𓀌-f𓀩D';
 
-    const ids = ['plainText','cipherKind','shift','cipherText','characters','encryptedResult','decryptedResult','detectedMeta','missingBox'];
+    const ids = ['plainText','cipherKind','shift','cipherText','characters','encryptedResult','decryptedResult','detectedMeta','ignoredBox','missingBox'];
     const el = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
     el.characters.value = defaultCharacters;
 
@@ -179,28 +184,38 @@
       const normalized = safeShift(shift, length);
       return normalized > Math.floor(length / 2) ? normalized - length : normalized;
     }
+    function textUsedForDecryption(text, alphabet) {
+      const allowed = new Set(alphabet);
+      return Array.from(text).filter((character) => allowed.has(character) || /\s/.test(character)).join('');
+    }
+    function charactersOutsideAlphabet(text, alphabet) {
+      const allowed = new Set(alphabet);
+      return Array.from(new Set(Array.from(text).filter((character) => !allowed.has(character) && !/\s/.test(character))));
+    }
     function detect(cipherText, characters) {
       const alphabet = normalizeCharacters(characters);
-      if (alphabet.length < 2 || cipherText.trim().length === 0) return { kind: 'caesar', shift: 0, plainText: cipherText, score: 0, confidence: 0 };
+      if (alphabet.length < 2 || cipherText.trim().length === 0) return { kind: 'caesar', shift: 0, plainText: cipherText, score: 0, confidence: 0, ignoredCharacters: [] };
       const source = alphabet.join('');
+      const ignoredCharacters = charactersOutsideAlphabet(cipherText, alphabet);
+      const filteredText = textUsedForDecryption(cipherText, alphabet);
       const candidates = [
-        { kind: 'atbash', shift: null, plainText: atbash(cipherText, source) },
-        ...Array.from({ length: alphabet.length }, (_, shift) => ({ kind: 'caesar', shift, plainText: decryptCaesar(cipherText, source, shift) }))
+        { kind: 'atbash', shift: null, plainText: atbash(filteredText, source) },
+        ...Array.from({ length: alphabet.length }, (_, shift) => ({ kind: 'caesar', shift, plainText: decryptCaesar(filteredText, source, shift) }))
       ].map((candidate) => ({ ...candidate, score: scoreText(candidate.plainText, alphabet) })).sort((a, b) => b.score - a.score);
       const best = candidates[0];
       const runner = candidates[1];
       const difference = runner ? best.score - runner.score : best.score;
       const confidence = best.score <= 0 ? 0 : Math.max(0, Math.min(99, Math.round(difference / Math.max(Math.abs(best.score), 1) * 100)));
-      return { ...best, shift: best.kind === 'caesar' ? signedShift(best.shift, alphabet.length) : null, confidence };
+      return { ...best, shift: best.kind === 'caesar' ? signedShift(best.shift, alphabet.length) : null, confidence, ignoredCharacters };
     }
     function missingCharacters() {
       const alphabet = new Set(normalizeCharacters(el.characters.value));
-      return Array.from(new Set(Array.from(el.plainText.value + el.cipherText.value).filter((character) => !alphabet.has(character))));
+      return Array.from(new Set(Array.from(el.plainText.value).filter((character) => !alphabet.has(character))));
     }
     function renderMissing() {
       const missing = missingCharacters();
       el.missingBox.classList.toggle('d-none', missing.length === 0);
-      el.missingBox.textContent = missing.length ? `Caracteres fuera del conjunto: ${missing.join(' ')}` : '';
+      el.missingBox.textContent = missing.length ? `Caracteres de la oracion original fuera del conjunto: ${missing.join(' ')}` : '';
     }
     document.getElementById('encryptBtn').addEventListener('click', () => {
       const shift = Number(el.shift.value);
@@ -209,16 +224,19 @@
       el.cipherText.value = result;
       el.decryptedResult.textContent = '';
       el.detectedMeta.textContent = '';
+      el.ignoredBox.textContent = '';
       renderMissing();
     });
     document.getElementById('decryptBtn').addEventListener('click', () => {
       const result = detect(el.cipherText.value, el.characters.value);
       el.detectedMeta.innerHTML = `<span class="badge badge-method">${result.kind === 'caesar' ? 'Cesar, modulo ' + result.shift : 'Atbash'}</span>`;
       el.decryptedResult.textContent = result.plainText;
+      el.ignoredBox.innerHTML = result.ignoredCharacters.length ? `Eliminados antes de descifrar por no estar en el alfabeto: <code>${result.ignoredCharacters.join(' ')}</code>` : '';
       renderMissing();
     });
     document.getElementById('asciiBtn').addEventListener('click', () => { el.characters.value = defaultCharacters; renderMissing(); });
     document.getElementById('spanishBtn').addEventListener('click', () => { el.characters.value = spanishCharacters; renderMissing(); });
+    document.getElementById('rareBtn').addEventListener('click', () => { el.characters.value = rareCharacters; renderMissing(); });
     document.getElementById('addMissingBtn').addEventListener('click', () => { el.characters.value += missingCharacters().join(''); renderMissing(); });
     ['input','change'].forEach((event) => ['plainText','cipherText','characters'].forEach((id) => el[id].addEventListener(event, renderMissing)));
     renderMissing();

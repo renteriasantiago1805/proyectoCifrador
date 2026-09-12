@@ -144,6 +144,17 @@ button {
   white-space: pre-wrap;
 }
 
+.ignored-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.ignored-note code {
+  color: var(--signal);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 991.98px) {
   .work-area .col-12 + .col-12 {
     padding-top: 1.25rem;

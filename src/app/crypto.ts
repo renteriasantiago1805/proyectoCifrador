@@ -8,13 +8,14 @@ export interface CipherCandidate {
   plainText: string;
   score: number;
   confidence: number;
+  ignoredCharacters: string[];
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class Crypto {
-  // [1] Alfabeto ASCII imprimible usado como base inicial del sistema.
+  // Referencia 1
   readonly defaultCharacters = Array.from({ length: 95 }, (_, index) =>
     String.fromCharCode(index + 32),
   ).join('');
@@ -26,7 +27,7 @@ export class Crypto {
       return text;
     }
 
-    // [2] Cesar avanza o retrocede posiciones usando aritmetica modular.
+    // Referencia 2
     return this.transformByIndex(text, alphabet, this.safeShift(shift, alphabet.length));
   }
 
@@ -47,7 +48,7 @@ export class Crypto {
       return text;
     }
 
-    // [3] Atbash refleja cada posicion del alfabeto contra el extremo opuesto.
+    // Referencia 3
     return Array.from(text)
       .map((character) => {
         const index = alphabet.indexOf(character);
@@ -70,25 +71,31 @@ export class Crypto {
         plainText: cipherText,
         score: 0,
         confidence: 0,
+        ignoredCharacters: [],
       };
     }
 
     const normalizedCharacters = alphabet.join('');
-    // [4] El descifrado automatico prueba Atbash y todos los modulos posibles de Cesar.
+    const ignoredCharacters = this.charactersOutsideAlphabet(cipherText, alphabet);
+    const textToDecrypt = this.textUsedForDecryption(cipherText, alphabet);
+
+    // Referencia 4
     const candidates: CipherCandidate[] = [
       {
         kind: 'atbash' as const,
         shift: null,
-        plainText: this.decryptAtbash(cipherText, normalizedCharacters),
+        plainText: this.decryptAtbash(textToDecrypt, normalizedCharacters),
         score: 0,
         confidence: 0,
+        ignoredCharacters,
       },
       ...Array.from({ length: alphabet.length }, (_, shift) => ({
         kind: 'caesar' as const,
         shift,
-        plainText: this.decryptCaesar(cipherText, normalizedCharacters, shift),
+        plainText: this.decryptCaesar(textToDecrypt, normalizedCharacters, shift),
         score: 0,
         confidence: 0,
+        ignoredCharacters,
       })),
     ].map((candidate) => ({
       ...candidate,
@@ -113,7 +120,7 @@ export class Crypto {
   }
 
   private transformByIndex(text: string, alphabet: string[], shift: number): string {
-    // [5] Los caracteres fuera del alfabeto se conservan; la interfaz avisa para agregarlos si se quieren cifrar.
+    // Referencia 5
     return Array.from(text)
       .map((character) => {
         const index = alphabet.indexOf(character);
@@ -127,8 +134,25 @@ export class Crypto {
       .join('');
   }
 
+  private textUsedForDecryption(text: string, alphabet: string[]): string {
+    // Referencia 11
+    const allowedCharacters = new Set(alphabet);
+
+    return Array.from(text)
+      .filter((character) => allowedCharacters.has(character) || /\s/.test(character))
+      .join('');
+  }
+
+  private charactersOutsideAlphabet(text: string, alphabet: string[]): string[] {
+    const allowedCharacters = new Set(alphabet);
+
+    return Array.from(
+      new Set(Array.from(text).filter((character) => !allowedCharacters.has(character) && !/\s/.test(character))),
+    );
+  }
+
   private scoreSpanishPlainText(text: string, alphabet: string[]): number {
-    // [6] Puntuacion inspirada en Al-Kindi: frecuencia, palabras comunes y forma del texto en espanol.
+    // Referencia 6
     const normalized = this.normalizeSpanish(text);
     const letters = normalized.match(/[a-z]/g) ?? [];
     const words = normalized.match(/[a-z]{1,24}/g) ?? [];
@@ -244,7 +268,7 @@ export class Crypto {
   }
 
   private scoreReadableSeparators(text: string, normalized: string): number {
-    // [7] Se prefieren espacios reales para evitar falsos positivos como palabras unidas con guiones bajos.
+    // Referencia 7
     const realSpaceRatio = (text.match(/\s/g) ?? []).length / Math.max(text.length, 1);
     const artificialSeparators = (text.match(/[_^`|~{}[\]\\]/g) ?? []).length;
     let score = 0;
@@ -324,7 +348,7 @@ export class Crypto {
   }
 
   private toSignedShift(shift: number, alphabetLength: number): number {
-    // [8] Convierte modulos equivalentes grandes a su forma negativa cuando es mas clara.
+    // Referencia 8
     const normalizedShift = this.safeShift(shift, alphabetLength);
     const halfLength = Math.floor(alphabetLength / 2);
 
