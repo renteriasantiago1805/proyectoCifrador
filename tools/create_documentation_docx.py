@@ -57,6 +57,77 @@ def add_reference(document, number, function_name, how_it_works, purpose):
     add_paragraph(document, purpose)
 
 
+def add_prompt_table(document):
+    add_heading(document, "Prompts representativos y recursos utilizados", 1)
+    add_paragraph(
+        document,
+        "Durante el desarrollo se usaron instrucciones iterativas para construir, corregir, publicar y documentar el sistema. No se incluyen todos los mensajes textuales, sino los prompts mas significativos agrupados por la intencion de trabajo.",
+    )
+
+    prompt_rows = [
+        (
+            "Prompt 1",
+            "Desarrollar una aplicacion en Angular y Bootstrap para cifrar y descifrar mensajes con Cesar y Atbash, siguiendo la rubrica del proyecto.",
+            "Definio la base del proyecto: tecnologias, alcance, metodos de cifrado, descifrado automatico, publicacion web y documentacion segura.",
+        ),
+        (
+            "Prompt 2",
+            "Ajustar la interfaz para que fuera mas compacta, sin titulo innecesario, con el area de cifrado y descifrado visibles y el conjunto de caracteres en una zona inferior.",
+            "Guio el diseno visual final para que la aplicacion fuera directa, facil de presentar y sin elementos que pertenecieran mas al documento que a la pagina.",
+        ),
+        (
+            "Prompt 3",
+            "Corregir el cifrado Cesar para que funcionara con modulos negativos y con rangos validos segun el tamano del alfabeto.",
+            "Permitio mejorar la logica modular y mostrar desplazamientos equivalentes de forma mas clara.",
+        ),
+        (
+            "Prompt 4",
+            "Permitir caracteres raros en el cifrado cuando estuvieran dentro del conjunto de caracteres, pero ignorarlos durante el descifrado automatico si no pertenecian al alfabeto activo.",
+            "Definio el manejo de alfabetos personalizados y evito que simbolos externos afectaran la deteccion automatica.",
+        ),
+        (
+            "Prompt 5",
+            "Documentar el codigo de forma segura usando comentarios de referencia y explicar cada referencia en un documento Word.",
+            "Produjo el esquema de Referencia 1, Referencia 2, etc., separando el codigo de la explicacion detallada para no llenar los archivos fuente de comentarios extensos.",
+        ),
+        (
+            "Prompt 6",
+            "Publicar el programa en GitHub Pages, verificar que funcionara en la liga publica y corregir diferencias entre la version local y la version publicada.",
+            "Aseguro que la entrega tuviera enlace funcional y que GitHub Pages cargara el mismo build de Angular que se veia en local.",
+        ),
+        (
+            "Prompt 7",
+            "Usar como referencia una documentacion en PDF de otro proyecto, sin copiarla, para que el reporte tuviera una estructura mas formal.",
+            "Ayudo a reforzar la organizacion del documento con portada, indice, fundamento tecnico, pruebas, enlaces y bibliografia, conservando redaccion propia.",
+        ),
+    ]
+
+    table = document.add_table(rows=1, cols=3)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.style = "Table Grid"
+    headers = table.rows[0].cells
+    set_cell_text(headers[0], "Prompt", True)
+    set_cell_text(headers[1], "Instruccion representativa", True)
+    set_cell_text(headers[2], "Uso dentro del proyecto", True)
+    for label, prompt, usage in prompt_rows:
+        cells = table.add_row().cells
+        set_cell_text(cells[0], label, True)
+        set_cell_text(cells[1], prompt)
+        set_cell_text(cells[2], usage)
+
+    add_heading(document, "Recursos utilizados", 2)
+    for item in [
+        "Rubrica e instrucciones del proyecto: se usaron como guia principal para cubrir portada, indice, introduccion, objetivo, desarrollo, publicacion, conclusion y bibliografia.",
+        "Angular: se uso para construir la aplicacion web, separar componentes y mantener la logica de cifrado en archivos TypeScript.",
+        "Bootstrap: se uso para formularios, botones, rejilla responsiva y estilos base de la interfaz.",
+        "GitHub y GitHub Pages: se usaron para alojar el codigo fuente y publicar la version web del programa.",
+        "Documento PDF de referencia: se reviso como ejemplo de estructura de reporte tecnico, sin copiar texto ni codigo.",
+        "Pruebas locales: se usaron npm test y npm run build para validar que el proyecto compilara y que las pruebas del cifrado pasaran.",
+        "Navegador local y GitHub Pages: se usaron para verificar que la aplicacion cifrara, descifrara y mostrara correctamente el resultado publicado.",
+    ]:
+        add_list_item(document, item)
+
+
 references = [
     (
         1,
@@ -179,8 +250,9 @@ for item in [
     "6. Explicacion detallada de referencias",
     "7. Pruebas de funcionamiento",
     "8. Enlaces de entrega",
-    "9. Conclusion",
-    "10. Bibliografia",
+    "9. Prompts representativos y recursos utilizados",
+    "10. Conclusion",
+    "11. Bibliografia",
 ]:
     add_paragraph(document, item)
 
@@ -286,6 +358,8 @@ add_list_item(document, "Prueba 6: usar el conjunto raro de caracteres para cifr
 add_heading(document, "Enlaces de entrega", 1)
 add_paragraph(document, "Programa web publicado: https://renteriasantiago1805.github.io/proyectoCifrador/")
 add_paragraph(document, "Codigo fuente documentado: https://github.com/renteriasantiago1805/proyectoCifrador")
+
+add_prompt_table(document)
 
 add_heading(document, "Conclusion", 1)
 add_paragraph(
